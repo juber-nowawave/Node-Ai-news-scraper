@@ -1,14 +1,15 @@
 const { connectDB, sql } = require('../config/db');
 const aiService = require('../services/aiService');
+const moment = require('moment-timezone');
 
 async function fetchAndStoreNews() {
-    console.log("🔄 Fetching stock market news...");
+    console.log("🔄 Fetching Indian Stock Market News...");
     
     // 1. Fetch News (Agent Step)
     const rawNews = await aiService.fetchNewsWithGroq("latest indian stock market news today");
     
     if (!rawNews || rawNews.includes("No response")) {
-        console.log("❌ No news fetched from Groq.");
+        console.log("❌ No Indian News fetched from Groq.");
         return;
     }
 
@@ -56,7 +57,7 @@ async function fetchAndStoreNews() {
     }
 
     if (!processedNews || !Array.isArray(processedNews)) {
-        console.log("❌ Failed to process news with Gemini.");
+        console.log("❌ Failed to process Indian News with Gemini.");
         return;
     }
 
@@ -69,33 +70,18 @@ async function fetchAndStoreNews() {
         // 2. Add 'date' field with decrementing timestamps
         // Python: date.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         
-        let currentDate = new Date();
-        // Convert to IST roughly if needed, but here using server time (UTC/Local) as base
-        // Python uses: pytz.timezone("Asia/Kolkata")
+        let currentDate = moment().tz("Asia/Kolkata");
         
-        const formatPythonLikeDate = (d) => {
-             // YYYY-MM-DD HH:mm:ss.SSS
-             const pad = (n, width=2) => n.toString().padStart(width, '0');
-             const yyyy = d.getFullYear();
-             const mm = pad(d.getMonth() + 1);
-             const dd = pad(d.getDate());
-             const hh = pad(d.getHours());
-             const min = pad(d.getMinutes());
-             const ss = pad(d.getSeconds());
-             const ms = pad(d.getMilliseconds(), 3);
-             return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}.${ms}`;
-        };
-
         processedNews.forEach(item => {
             item.category = "India";
-            item.date = formatPythonLikeDate(currentDate);
+            item.date = currentDate.format('YYYY-MM-DD HH:mm:ss.SSS');
             // Decrement 2 minutes for next item
-            currentDate.setMinutes(currentDate.getMinutes() - 2);
+            currentDate.subtract(2, 'minutes');
         });
 
         const jsonInput = JSON.stringify(processedNews);
         
-        console.log("📝 Storing news in MSSQL...");
+        console.log("📝 Storing Indian News in MSSQL...");
         
         // EXEC Jobs_USP_News_Feeds_Daily ?, ?, ?
         // Parameters: @Action, @Date (null), @Json
@@ -108,7 +94,7 @@ async function fetchAndStoreNews() {
         .input('p2', sql.NVarChar, null)                // param 2 (NULL)
         .input('p3', sql.NVarChar(sql.MAX), jsonInput)  // param 3
         .query('EXEC Jobs_USP_News_Feeds_Daily @p1, @p2, @p3');
-       console.log("✅ News stored in MSSQL successfully.");
+       console.log("✅ Indian News stored in MSSQL successfully.");
         
     } catch (err) {
         console.error("❌ Database error:", err);

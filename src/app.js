@@ -54,7 +54,7 @@ app.get('/trigger-world-news', async (req, res) => {
 
 // Schedule Jobs
 // Python app runs every 50 minutes.
-fetchAndStoreNews();
+// fetchAndStoreNews();
 cron.schedule('*/50 * * * *', () => {
     console.log("⏰ Running Scheduled Indian News Fetch Job...");
     fetchAndStoreNews();
@@ -63,7 +63,7 @@ cron.schedule('*/50 * * * *', () => {
 // World News Job - Run every 1 hour (matching Python logic mentioned but not strictly defined, defaulting to 1 hour or same as India news)
 // Python scheduler code was commented out in snippet but had `minutes=1` for testing? Assuming 1 hour or similar to India news.
 // Let's set it to run every hour at :05 to avoid conflict with India news
-fetchAndStoreWorldNews();
+// fetchAndStoreWorldNews();
 cron.schedule('5 * * * *', () => {
     console.log("⏰ Running Scheduled WORLD News Fetch Job...");
     fetchAndStoreWorldNews();

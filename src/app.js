@@ -3,6 +3,8 @@ const cors = require('cors');
 const cron = require('node-cron');
 const { connectDB, sql } = require('./config/db');
 const { fetchAndStoreNews } = require('./jobs/newsJob');
+const { fetchAndStoreWorldNews } = require('./jobs/worldNewsJob');
+
 // const { postNewsToTwitter } = require('./jobs/twitterJob');
 
 const app = express();
@@ -34,16 +36,37 @@ app.get('/api/news', async (req, res) => {
     }
 });
 
-app.get('/', (req, res) => {
-    res.send("Stock Market News Cron Job is Running!");
+// Health Check
+app.get('/health', (req, res) => res.send('AI News Data Service is Running...'));
+
+// Manual Trigger
+app.get('/trigger-news', async (req, res) => {
+    await fetchAndStoreNews();
+    res.send('News fetch triggered!');
 });
+
+// Manual Trigger World News
+app.get('/trigger-world-news', async (req, res) => {
+    await fetchAndStoreWorldNews();
+    res.send('World News fetch triggered!');
+});
+
 
 // Schedule Jobs
 // Python app runs every 50 minutes.
-// fetchAndStoreNews();
+fetchAndStoreNews();
 cron.schedule('*/50 * * * *', () => {
-    console.log("⏰ Running Scheduled News Fetch Job...");
+    console.log("⏰ Running Scheduled Indian News Fetch Job...");
     fetchAndStoreNews();
+});
+
+// World News Job - Run every 1 hour (matching Python logic mentioned but not strictly defined, defaulting to 1 hour or same as India news)
+// Python scheduler code was commented out in snippet but had `minutes=1` for testing? Assuming 1 hour or similar to India news.
+// Let's set it to run every hour at :05 to avoid conflict with India news
+fetchAndStoreWorldNews();
+cron.schedule('5 * * * *', () => {
+    console.log("⏰ Running Scheduled WORLD News Fetch Job...");
+    fetchAndStoreWorldNews();
 });
 
 //    postNewsToTwitter();

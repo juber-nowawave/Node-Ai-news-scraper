@@ -174,6 +174,143 @@ const aiService = {
     return null;
   },
 
+
+
+  /**
+   * Scrapes world news from multiple sources:
+   * 1. LiveMint
+   * 2. MoneyControl
+   * 3. Economic Times
+   */
+  async fetchWorldNewsFromWeb() {
+      let allNewsItems = [];
+      const headers = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      };
+
+      const fetchSafe = async (url, sourceName, parseFn) => {
+          try {
+              console.log(`📡 Fetching ${sourceName}: ${url}`);
+              const { data } = await axios.get(url, { headers });
+              const $ = cheerio.load(data);
+              parseFn($);
+          } catch (error) {
+              console.error(`❌ Error fetching ${sourceName}:`, error.message);
+          }
+      };
+
+      // 1. LiveMint World News
+      await fetchSafe("https://www.livemint.com/news/world", "LiveMint", ($) => {
+          $("h2.headline").slice(0, 25).each((i, el) => {
+              const titleTag = $(el).find('a');
+              if (titleTag.length) {
+                  const title = $(el).text().trim();
+                  let link = titleTag.attr('href');
+                  if (link && !link.startsWith('http')) {
+                      link = `https://www.livemint.com${link}`;
+                  }
+                  allNewsItems.push({ headline: title, sourcelink: link });
+              }
+          });
+      });
+
+      // 2. MoneyControl World News
+      await fetchSafe("https://www.moneycontrol.com/world/news/", "MoneyControl", ($) => {
+          $("ul#cagetory li").slice(0, 20).each((i, el) => {
+             const titleTag = $(el).find("h2 a");
+             if (titleTag.length) {
+                 const title = titleTag.text().trim();
+                 let link = titleTag.attr('href');
+                 if (link && !link.startsWith('http')) {
+                     link = `https://www.moneycontrol.com${link}`;
+                 }
+                 allNewsItems.push({ headline: title, sourcelink: link });
+             }
+          });
+      });
+
+      // 3. Economic Times International
+      await fetchSafe("https://economictimes.indiatimes.com/news/international", "Economic Times", ($) => {
+          $(".top-news ul.list1 li a").slice(0, 20).each((i, el) => {
+              const title = $(el).text().trim();
+              let link = $(el).attr('href');
+              if (link && !link.startsWith('http')) {
+                  link = `https://economictimes.indiatimes.com${link}`;
+              }
+              allNewsItems.push({ headline: title, sourcelink: link });
+          });
+      });
+
+      console.log(`✅ Fetched ${allNewsItems.length} world news items.`);
+      return allNewsItems;
+  },
+
+  /**
+   * Rewrites World News using Gemini with the specific World prompt.
+   */
+  async rewriteWorldNewsWithGemini(rawNewsItems) {
+    if (!rawNewsItems || rawNewsItems.length === 0) return null;
+
+    console.log("🤖 Sending World News to Gemini for rewriting...");
+    const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.0-flash",
+        generationConfig: { responseMimeType: "application/json" }
+    });
+
+    const prompt = `
+    INSTRUCTIONS:
+    - Rewrite each headline in a suspenseful yet professional way.
+    - Only include that news that may impact the economy or the stock market or like financial related or may affect the indian market only. discard other irrelevant news.
+    - Strictly get news article from each news[sourcelink] and then rewrite each news article while maintaining accuracy.
+    - Ensure rewritten content is **exactly 200 characters**.
+    - Format into well-structured paragraphs.
+    - Strictly preserve numerical data, stock indices, and key facts.
+    - Strictly Include only unique articles from today, avoiding duplicates.
+    - Strictly Identify and remove duplicate articles that convey the same core event or information, even if phrased differently, and keep only one.
+    - Analyze the news content and assign a sentiment score from -5 to 5, where -5 to -4 is "worse," -3 to -1 is "bad," 0 is "average," 1 to 3 is "good," 4 is "better," and 5 is "best," returning only the numerical score.
+    - Analyze the news content and calculate its overall weightage based on its economic impact on Indian Economy (High, Moderate, Low) and sentiment score (-5 to 5). Assign a final weightage score that reflects both factors, emphasizing news with high impact and high sentiment scores.
+    - Follow this JSON format strictly:
+    The output must be an array where each news article follows this structure:
+
+             [
+                 {"title": "Rewritten Headline", 
+                   "description": "Rewritten News should be in simple english - easy to understand (strictly in 200 characters only)", 
+                   "url": "take Source Link as it is from the provided data ",
+                   "category":"put World in all." ,
+                   "sentiment":"Analyze the news content and assign a sentiment score from -5 to 5, where -5 to -4 is "worse," -3 to -1 is "bad," 0 is "average," 1 to 3 is "good," 4 is "better," and 5 is "best," returning only the numerical score.",
+                   "weightage":"Analyze the news content and calculate its overall weightage based on its economic impact on Indian Economy (High, Moderate, Low) and sentiment score (-5 to 5). Assign a final weightage score that reflects both factors, emphasizing news with high impact and extreme sentiment scores."
+                   }
+                 {next news in the same format}, ...
+             ]
+
+              EXTRACT ALL NEWS ARTICLES FROM THE FOLLOWING DATA AND STRICTLY FOLLOW THE ABOVE INSTRUCTIONS:
+
+          ${JSON.stringify(rawNewsItems)}
+
+        REMEMBER: Strictly From this whole data above Identify and remove duplicate articles that convey the same core event or information, even if phrased differently, and keep only one.
+     `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        let text = response.text();
+
+        // Extract JSON from markdown code block if present
+        const jsonMatch = text.match(/\[\s*\{.*\}\s*\]/s);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        } else {
+            if (text.trim().startsWith('[') || text.trim().startsWith('{')) {
+                return JSON.parse(text);
+            }
+        }
+        return null;
+    } catch (e) {
+        console.error("❌ Failed to process World News with Gemini:", e);
+        return null;
+    }
+  },
+
   /**
    * Identifies and removes duplicate news.
    * Mirrors remove_duplicate_agent.py
@@ -184,12 +321,31 @@ const aiService = {
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
         const prompt = `
         INSTRUCTIONS:
-        - Identify and remove duplicate news that convey the same core event.
-        - Output strictly an array of maximum 30 objects.
-        - JSON Format: [{"title": "...", "description": "...", "url": "...", "category": "...", "sentiment": 0, "weightage": "..."}]
-        
-        EXTRACT FROM:
-        ${JSON.stringify(data)}
+        - Strictly From this whole data Include only unique articles avoiding duplicates.
+        - Strictly From this whole data below Identify and remove duplicate articles that convey the same core event or information, even if phrased differently, and keep only one.
+        - Strictly preserve numerical data, stock indices, and key facts.
+        - Strictly Identify and remove duplicate news that convey the same core event or information, even if phrased differently, and keep only one.
+        - Format into well-structured paragraphs.
+        - Follow this JSON format strictly:
+        The output must be an array of maximum 30 objects only(not more than 30) where each news article follows this structure:
+
+             [
+                 {"title": "title from data", 
+                   "description": "description from data", 
+                   "url": "url from data", 
+                    "category":"category from data" ,
+                    "sentiment":"sentiment from data and its data type must be integer (number)",
+                    "weightage":"weightage from data "
+
+                }
+                 {next news in the same format}, ...
+             ]
+
+              EXTRACT ALL NEWS ARTICLES FROM THE FOLLOWING DATA AND STRICTLY FOLLOW THE ABOVE INSTRUCTIONS:
+
+          ${JSON.stringify(data)}
+            
+          REMEMBER: Strictly From this whole above data Identify and remove duplicate articles that convey the same core event or information, even if phrased differently, and keep only one.
         `;
 
         const result = await model.generateContent(prompt);

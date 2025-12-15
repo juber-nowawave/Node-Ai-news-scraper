@@ -4,7 +4,6 @@ const cron = require('node-cron');
 const { connectDB, sql } = require('./config/db');
 const { fetchAndStoreNews } = require('./jobs/newsJob');
 const { fetchAndStoreWorldNews } = require('./jobs/worldNewsJob');
-
 // const { postNewsToTwitter } = require('./jobs/twitterJob');
 
 const app = express();
@@ -52,6 +51,17 @@ app.get('/trigger-world-news', async (req, res) => {
 });
 
 
+app.get('/', (req, res) => {
+    res.send("Stock Market News Cron Job is Running!");
+});
+
+// Manual Trigger World News
+app.get('/trigger-world-news', async (req, res) => {
+    await fetchAndStoreWorldNews();
+    res.send('World News fetch triggered!');
+});
+
+
 // Schedule Jobs
 // Python app runs every 50 minutes.
 // fetchAndStoreNews();
@@ -60,11 +70,9 @@ cron.schedule('*/50 * * * *', () => {
     fetchAndStoreNews();
 });
 
-// World News Job - Run every 1 hour (matching Python logic mentioned but not strictly defined, defaulting to 1 hour or same as India news)
-// Python scheduler code was commented out in snippet but had `minutes=1` for testing? Assuming 1 hour or similar to India news.
-// Let's set it to run every hour at :05 to avoid conflict with India news
+// World News Job - Run every 50 minutes
 // fetchAndStoreWorldNews();
-cron.schedule('5 * * * *', () => {
+cron.schedule('*/50 * * * *', () => {
     console.log("⏰ Running Scheduled WORLD News Fetch Job...");
     fetchAndStoreWorldNews();
 });

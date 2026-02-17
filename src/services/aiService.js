@@ -3,9 +3,19 @@ const cheerio = require('cheerio');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Groq = require("groq-sdk");
 require('dotenv').config();
+const gemini_api_keys = [
+    process.env.GEMINI_API_KEY1,
+    process.env.GEMINI_API_KEY2,
+    process.env.GEMINI_API_KEY3,
+    process.env.GEMINI_API_KEY4,
+    process.env.GEMINI_API_KEY5,
+] 
+
+const gemini_api = gemini_api_keys[Math.floor(Math.random() * gemini_api_keys.length)];
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(gemini_api);
+
 
 const aiService = {
   
@@ -111,7 +121,7 @@ const aiService = {
 
     console.log("🤖 Sending to Gemini for rewriting...");
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -253,7 +263,7 @@ const aiService = {
 
     console.log("🤖 Sending World News to Gemini for rewriting...");
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -318,7 +328,7 @@ const aiService = {
   async removeDuplicateNews(data) {
     if (!data) return "nan";
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         const prompt = `
         INSTRUCTIONS:
         - Strictly From this whole data Include only unique articles avoiding duplicates.
@@ -432,7 +442,7 @@ const aiService = {
 
     console.log("🤖 Sending World News to Gemini for rewriting...");
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         generationConfig: { responseMimeType: "application/json" }
     });
 

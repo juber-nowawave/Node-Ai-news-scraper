@@ -38,21 +38,14 @@ app.get('/api/news', async (req, res) => {
 // Health Check
 app.get('/health', (req, res) => res.send('AI News Data Service is Running...'));
 
+app.get('/', (req, res) => {
+    res.send("Stock Market News Cron Job is Running!");
+});
+
 // Manual Trigger
 app.get('/trigger-news', async (req, res) => {
     await fetchAndStoreNews();
     res.send('News fetch triggered!');
-});
-
-// Manual Trigger World News
-app.get('/trigger-world-news', async (req, res) => {
-    await fetchAndStoreWorldNews();
-    res.send('World News fetch triggered!');
-});
-
-
-app.get('/', (req, res) => {
-    res.send("Stock Market News Cron Job is Running!");
 });
 
 // Manual Trigger World News

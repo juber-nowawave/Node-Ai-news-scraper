@@ -188,5 +188,5 @@ async function fetchAndStoreNews() {
         console.error("❌ Database error:", err);
     }
 }
-
+// fetchAndStoreNews()
 module.exports = { fetchAndStoreNews };

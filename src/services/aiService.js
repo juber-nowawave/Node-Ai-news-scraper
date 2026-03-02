@@ -111,7 +111,7 @@ const aiService = {
 
     console.log("🤖 Sending to Gemini for rewriting...");
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -253,7 +253,7 @@ const aiService = {
 
     console.log("🤖 Sending World News to Gemini for rewriting...");
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -318,7 +318,7 @@ const aiService = {
   async removeDuplicateNews(data) {
     if (!data) return "nan";
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         const prompt = `
         INSTRUCTIONS:
         - Strictly From this whole data Include only unique articles avoiding duplicates.
@@ -432,7 +432,7 @@ const aiService = {
 
     console.log("🤖 Sending World News to Gemini for rewriting...");
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         generationConfig: { responseMimeType: "application/json" }
     });
 

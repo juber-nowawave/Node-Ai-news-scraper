@@ -16,7 +16,7 @@ if (!API_KEY) {
 }
 
 const genAI = new GoogleGenerativeAI(API_KEY);
-const MODEL_NAME = "gemini-2.0-flash";
+const MODEL_NAME = "gemini-2.5-flash";
 
 const systemInstruction = `
 You are Parikshit, an AI assistant from Now a Wave. Your goal is to automate tasks and streamline business processes efficiently. 

@@ -157,5 +157,6 @@ async function fetchAndStoreWorldNews() {
         console.error("❌ Database error storing World News:", err);
     }
 }
+// fetchAndStoreWorldNews();
 
 module.exports = { fetchAndStoreWorldNews };

@@ -61,14 +61,14 @@ app.get('/trigger-world-news', async (req, res) => {
 cron.schedule('*/50 * * * *', () => {
     console.log("⏰ Running Scheduled Indian News Fetch Job...");
     fetchAndStoreNews();
-});
+},{timezone: "Asia/Kolkata"});
 
 // World News Job - Run every 50 minutes
 // fetchAndStoreWorldNews();
 cron.schedule('*/50 * * * *', () => {
     console.log("⏰ Running Scheduled WORLD News Fetch Job...");
     fetchAndStoreWorldNews();
-});
+},{timezone: "Asia/Kolkata"});
 
 //    postNewsToTwitter();
 // Twitter Job - Every 1 hour

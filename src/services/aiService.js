@@ -3,18 +3,10 @@ const cheerio = require('cheerio');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Groq = require("groq-sdk");
 require('dotenv').config();
-const gemini_api_keys = [
-    process.env.GEMINI_API_KEY1,
-    process.env.GEMINI_API_KEY2,
-    process.env.GEMINI_API_KEY3,
-    process.env.GEMINI_API_KEY4,
-    process.env.GEMINI_API_KEY5,
-] 
-
-const gemini_api = gemini_api_keys[Math.floor(Math.random() * gemini_api_keys.length)];
+const gemini_api_key = process.env.GEMINI_API_KEY5;
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const genAI = new GoogleGenerativeAI(gemini_api);
+const genAI = new GoogleGenerativeAI(gemini_api_key);
 
 
 const aiService = {
